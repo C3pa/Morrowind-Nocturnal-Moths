@@ -40,6 +40,17 @@ function util.isNight()
 	return (hour < wc.sunriseHour) or (hour >= nightStarHour)
 end
 
+function util.shouldCullMoths()
+	return not util.isNight()
+	    or not util.isNiceWeather()
+end
+
+
+---@param cell tes3cell
+function util.canSpawnMothsInCell(cell)
+	return config.mothsInInteriorsBehavingAsExteriors and cell.isOrBehavesAsExterior and true
+	    or not cell.isInterior
+end
 
 ---@param reference tes3reference
 function util.playSound(reference)
@@ -88,19 +99,5 @@ function util.isLanternValid(ref)
 	local mesh = string.lower(light.mesh)
 	return (lanterns[mesh] or config.whitelist[mesh]) or false
 end
-
-function util.getLights()
-	---@type tes3reference[]
-	local candles = {}
-	for _, cell in ipairs(tes3.getActiveCells()) do
-		for ref in cell:iterateReferences(tes3.objectType.light) do
-			if util.isLanternValid(ref) then
-				table.insert(candles, ref)
-			end
-		end
-	end
-	return candles
-end
-
 
 return util

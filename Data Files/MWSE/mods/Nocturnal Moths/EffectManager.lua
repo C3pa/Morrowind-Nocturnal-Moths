@@ -11,7 +11,7 @@ local path = "R0\\e\\moths_lntrn.NIF"
 
 
 -- In seconds
-local updateDuration = 15
+local durationUntilNextUpdate = 15
 
 ---@class NocturnalMoths.EffectManager.UpdateState
 ---@field isNiceWeather boolean True if the weather was nice on last update
@@ -64,9 +64,21 @@ local offsets = {
 -- Attaches the moths node to light's "AttachLight" node or to worldVFXRoot if it's not found.
 ---@private
 ---@param light tes3reference
+---@return boolean mothsSpawned
 function EffectManager:spawnVFX(light)
-	log:debug("Spawning vfx for %q.", light.id)
+	-- Don't apply the effect twice.
+	if self.activeEffects[light] then
+		return false
+	end
 
+	if not util.isLanternValid(light) then
+		return false
+	end
+
+	log:debug("Spawning vfx for %q.", light.id)
+	util.playSound(light)
+
+	-- Attach the moths VFX to the light's "AttachLight" node
 	local mesh = tes3.loadMesh(path):clone() --[[@as niNode]]
 	local parent = light.sceneNode:getObjectByName(attachNodeName)
 	if not parent then
@@ -78,31 +90,13 @@ function EffectManager:spawnVFX(light)
 			mesh.translation = offset
 		end
 	end
-
+	--- @cast parent niNode
 	parent:attachChild(mesh)
 	if util.isLightOff(light) then
 		self:setMothsAppCulled(light, true)
 	end
 	util.updateNode(parent)
 	self.activeEffects[light] = mesh
-end
-
--- Attaches moths to given light. Does all the needed checks and also starts the moths sound.
----@param reference tes3reference
----@return boolean mothsSpawned
-function EffectManager:applyMothEffect(reference)
-	-- Don't apply the effect twice.
-	if self.activeEffects[reference] then
-		return false
-	end
-
-	local mesh = string.lower(reference.object.mesh)
-	if not (lanterns[mesh] or config.whitelist[mesh]) then
-		return false
-	end
-
-	util.playSound(reference)
-	self:spawnVFX(reference)
 	return true
 end
 
@@ -141,7 +135,7 @@ function EffectManager:update()
 	local timestamp = tes3.getSimulationTimestamp() * 3600
 	if timestamp < self.nextUpdateTimestamp then return end
 
-	self.nextUpdateTimestamp = timestamp + updateDuration
+	self.nextUpdateTimestamp = timestamp + durationUntilNextUpdate
 
 	local isNight = util.isNight()
 	local isNiceWeather = util.isNiceWeather()
@@ -161,28 +155,31 @@ function EffectManager:update()
 end
 
 -- Usually called on itemDropped event.
----@param e itemDroppedEventData
-function EffectManager:onItemDropped(e)
+---@param e itemDroppedEventData|MidnightOil.LightToggleEventData
+function EffectManager:applyMothEffect(e)
+	if not util.canSpawnMothsInCell(tes3.player.cell) then return end
 	local reference = e.reference
-	local object = reference.object
-	if object.objectType ~= tes3.objectType.light or object.isOffByDefault then return end
-	self:applyMothEffect(reference)
+	if reference.object.objectType ~= tes3.objectType.light then return end
+	self:spawnVFX(reference)
+	if util.shouldCullMoths() then
+		self:setMothsAppCulled(reference, true)
+	end
 end
 
 ---@private
 function EffectManager:applyMothsOnAllLanterns()
-	-- We only attach moths to lanterns in exterior and interiors behaving as exteriors.
-	if not tes3.player.cell.isOrBehavesAsExterior then return end
-	for _, light in ipairs(util.getLights()) do
-		self:applyMothEffect(light)
+	if not util.canSpawnMothsInCell(tes3.player.cell) then return end
+	for _, cell in ipairs(tes3.getActiveCells()) do
+		for light in cell:iterateReferences(tes3.objectType.light) do
+			self:spawnVFX(light)
+		end
 	end
 end
 
 -- Usually called on cellChanged event.
 function EffectManager:onCellChanged()
 	self:applyMothsOnAllLanterns()
-	if not util.isNiceWeather()
-	or not util.isNight() then
+	if util.shouldCullMoths() then
 		self:cullAllMoths()
 	end
 end

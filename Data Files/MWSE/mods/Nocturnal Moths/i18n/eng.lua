@@ -18,6 +18,9 @@ return {
 		["leaveCell"] = "You must leave the current cell before this change will come into effect.",
 
 		-- Strings for inidividual settings:
+		["mothsInInteriorsBehavingAsExteriors"] = {
+			["label"] = "Enable moths in interiors behaving as exteriors",
+		},
 		["enableSound"] = {
 			["label"] = "Enable moths sound effect",
 			["description"] = "When enabled, a subtle sound will be played by moths orbiting a lantern.",

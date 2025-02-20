@@ -51,7 +51,7 @@ end
 local function registerModConfig()
 	local template = mwse.mcm.createTemplate({
 		name = i18n("Nocturnal Moths"),
-		--headerImagePath = "MWSE/mods/Nocturnal Moths/mcm/Header.tga",
+		-- headerImagePath = "MWSE/mods/Nocturnal Moths/mcm/Header.tga",
 		config = config,
 		defaultConfig = config.default,
 		showDefaultSetting = true,
@@ -64,6 +64,13 @@ local function registerModConfig()
 		showReset = true,
 	}) --[[@as mwseMCMSideBarPage]]
 	createSidebar(page)
+
+	page:createOnOffButton({
+		label = i18n("mcm.mothsInInteriorsBehavingAsExteriors.label"),
+		configKey = "mothsInInteriorsBehavingAsExteriors",
+		restartRequired = true,
+		restartRequiredMessage = i18n("mcm.leaveCell")
+	})
 
 	page:createOnOffButton({
 		label = i18n("mcm.enableSound.label"),
@@ -101,7 +108,7 @@ local function registerModConfig()
 		end
 	})
 
-	local whitelistPage = template:createExclusionsPage({
+	template:createExclusionsPage({
 		label = i18n("mcm.whitelist.label"),
 		description = i18n("mcm.whitelist.description"),
 		leftListLabel = i18n("mcm.whitelist.leftListLabel"),

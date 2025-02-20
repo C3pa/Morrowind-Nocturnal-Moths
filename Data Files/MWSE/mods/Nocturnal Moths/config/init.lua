@@ -6,6 +6,7 @@ local default = {
 	logLevel = "INFO",
 	enableSound = true,
 	soundVolume = 1.0,
+	mothsInInteriorsBehavingAsExteriors = true,
 	---@type { [string]: boolean }
 	whitelist = {}
 }
@@ -15,7 +16,7 @@ local default = {
 ---@field default NocturnalMoths.defaultConfigTable
 
 local config = mwse.loadConfig(configFile, default) --[[@as NocturnalMoths.configTable]]
-config.version = "2.0.0"
+config.version = "2.1.0"
 config.default = default
 
 return config
